@@ -15,8 +15,16 @@ do{\
 }while(0)
 
 
-#define SAMPLING_TIME 1
+#define SAMPLING_TIME   1
 #define SAMPLING_COUNT 10
+
+/* Let the size of the data to be sufficiently large */
+#define SAMPLING_DATA_SIZE     (1024)*(1024)*(256)
+
+#define SAMPLE_SIZE_FOR_MEAN   5
+
+#define NANO_SECONDS 1000000000
+
 
 long
 get_read_addr(int drive_fd)
@@ -51,12 +59,80 @@ get_read_addr(int drive_fd)
     return rand_num;
 }
 
+/*
+ *  get_time_elapsed() : Get the elapsed time in nano seconds
+ */
+long
+get_time_elapsed(
+        timespec    start,
+        timespec    end)
+{
+    long    tmp = end.tv_nsec - start.tv_nsec;
+
+
+    if(tmp < 0)
+    {
+        /* TIme has elapsed in terms of seconds !!! */
+        diff.tv_sec = end.tv_sec - start.tv_sec;
+        diff.tv_nsec = NANO_SECONDS + end.tv_nsec - start.tv_nsec;
+    }
+    else
+    {
+        diff.tv_sec = end.tv_sec - start.tv_sec;
+        diff.tv_nsec = end.tv_nsec - start.tv_nsec;
+    }
+
+    if(diff.tv_sec > 0)
+        diff.tv_nsec = diff.tv_nsec + (NANO_SECONDS * diff.tv_sec);
+
+    return diff.tv_nsec;
+}
+
+
+
 long
 get_mean_access_time(
         int     disk_fd,
         long    read_addr)
 {
-    time_t  start, before, after;
+    timespec    before, after;
+    time_t      start;
+    long        sum, tmp_avg, avg;
+    long        elapsed_time[SAMPLE_SIZE_FOR_MEAN]; // This will have elapsed time in microseconds.
+
+
+    start = time(NULL);
+    while(time(NULL) <= (start + SAMPLING_TIME))
+    {
+        ret = lseek(disk_fd, read_addr, SEEK_SET);
+        if(ret == -1)
+        {
+            perror("lseek");
+            return -1;
+        }
+        
+        before = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &before);
+        read(disk_fd, read_buff, READ_DATA_SIZE);
+        after = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &after);
+        diff = get_time_elapsed(before, after);
+        
+        debug("Elapsed time     :   %l", diff);
+        if(i == SAMPLE_SIZE_FOR_MEAN)
+        {
+            for(j=0; j < SAMPLE_SIZE_FOR_MEAN; j++)
+                sum = sum + elapsed_time[i];
+            tmp_avg = sum/SAMPLE_SIZE_FOR_MEAN;
+            avg = (avg + tmp_avg)/2;
+
+            i = -1; //Reset it
+            elapsed_time[++i] = diff;
+        }
+        else
+            elapsed_time[++i] = diff;
+    }
+
+    return avg;
+
 }
     void
 get_baseline_results(
@@ -66,11 +142,13 @@ get_baseline_results(
         long    *avg_slope)
 {
     int     i=0;
+    long    prev = -1, avg_time, std_dev;
+    long    slope = -1;
 
-    for(i=0; i<SAMPLING_COUNT; i++)
+    for(i=0; i < SAMPLING_COUNT; i++)
     {
         avg_time = get_mean_access_time(fd, read_addr);
-        std_dev = std_dev + ((double)avg_time/(double)SAMPLING_TIME);
+        std_dev = std_dev + ((double)avg_time/(double)SAMPLING_COUNT);
         
         if(prev == -1)
         {
