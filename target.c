@@ -18,8 +18,79 @@ do{\
 
 /* Let the size of the data to be sufficiently large */
 #define READ_DATA_SIZE     (1024)*(1024)
+#define SAMPLING_TIME   1
+#define SLEEP_TIME 1
+
+long
+get_read_addr(int drive_fd)
+{
+
+    int     ret = 0;
+    long    rand_num;
+    off_t   drive_size;
+
+    ret = ioctl(drive_fd, BLKGETSIZE64, &drive_size);
+    if(ret == -1)
+    {
+        perror("ioctl  ");
+        return -1;
+    }
+    debug("Size of disk : %ld", drive_size);
 
 
+    while(true)
+    {
+        rand_num = rand();
+        if(rand_num < drive_size)
+            break;
+    }
+
+    return rand_num;
+}
+
+
+
+
+int
+send_bit(int disk_fd, char bit)
+{
+    long    read_addr;
+    time_t  start;
+    char    read_buff[READ_DATA_SIZE];
+
+    printf("Sending bit -------> (%c)\n", bit);
+
+    if(bit == '0')
+    {
+        sleep(SLEEP_TIME);
+    }
+    else
+    {
+        read_addr = get_read_addr(disk_fd);
+        start = time(NULL);
+        while(time(NULL) <= (start + SAMPLING_TIME))
+        {
+            lseek(disk_fd, read_addr, SEEK_SET);
+            read(disk_fd, read_buff, READ_DATA_SIZE);
+        }
+    }
+
+    return 0;
+}
+
+
+int
+send_data(int disk_fd)
+{
+    char    *data = "1010101110101010111010101010100011100001111";
+    int     len, i;
+
+    len = strlen(data);
+    for(i=0; i<len; i++)
+        send_bit(disk_fd, data[i]);
+
+    return 0;
+}
 
 int
 main(int argc, char *argv[])
@@ -32,7 +103,7 @@ main(int argc, char *argv[])
 
     if(argc < 2)
     {
-        printf("Usage : listener <drive-for-communication>\n");
+        printf("Usage : target <drive-for-communication>\n");
         return -1;
     }
 
@@ -44,6 +115,7 @@ main(int argc, char *argv[])
         return -1;
     }
 
+    printf("----------------- Sending data over covert channel --------------------\n");
     send_data(dfd);
 
     return 0;
