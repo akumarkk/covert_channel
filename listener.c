@@ -21,7 +21,7 @@ do{\
 #define SAMPLING_COUNT 10
 
 /* Let the size of the data to be sufficiently large */
-#define READ_DATA_SIZE     (1024)*(1024)*(256)
+#define READ_DATA_SIZE     (1024)*(1024)
 
 #define SAMPLE_SIZE_FOR_MEAN   5
 
@@ -103,8 +103,11 @@ get_mean_access_time(
     long        elapsed_time[SAMPLE_SIZE_FOR_MEAN]; // This will have elapsed time in microseconds.
     int         j, ret = -1, i=-1;
     char        read_buff[READ_DATA_SIZE];
+    //char        read_buff[1024];
 
+    debug("disk_fd = %d  read_addr = %ld", disk_fd, read_addr);
     start = time(NULL);
+    debug("start time   :   %ld", start);
     while(time(NULL) <= (start + SAMPLING_TIME))
     {
         ret = lseek(disk_fd, read_addr, SEEK_SET);
@@ -119,7 +122,7 @@ get_mean_access_time(
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &after);
         diff = get_time_elapsed(before, after);
         
-        debug("Elapsed time     :   %ld", diff);
+        debug("Elapsed time     :   %ld ns", diff);
         if(i == SAMPLE_SIZE_FOR_MEAN)
         {
             for(j=0; j < SAMPLE_SIZE_FOR_MEAN; j++)
@@ -137,7 +140,9 @@ get_mean_access_time(
     return avg;
 
 }
-    void
+
+
+void
 get_baseline_results(
         int     fd,
         long    read_addr,
@@ -147,6 +152,8 @@ get_baseline_results(
     int     i=0;
     long    prev = -1, avg_time, std_dev;
     long    slope = -1;
+
+    debug("fd = %d  read_addr = %ld", fd, read_addr);
 
     for(i=0; i < SAMPLING_COUNT; i++)
     {
@@ -166,8 +173,8 @@ get_baseline_results(
 
     *par_std_dev = sqrt(std_dev);
     *par_avg_slope = slope;
+    debug("Baseline std_dev = %ld    slope = %ld", *par_std_dev, *par_avg_slope);
 
-    return;
 }
 
         
@@ -178,9 +185,9 @@ main(int argc, char *argv[])
     off_t   drive_size;
     int	    dfd = -1;
     struct  stat stat_buff;
-    int	    ret = 0;
-    long    read_addr = 0;
-   long     avg_slope, std_dev;
+    int	    ret = 0, read_bit;
+    long    read_addr = 0, slope, normalized;
+    long    base_avg_slope, base_std_dev, curr, prev;
 
 
     if(argc < 2)
@@ -200,6 +207,36 @@ main(int argc, char *argv[])
     /* This is the read address that is used for entire session */
     read_addr  = get_read_addr(dfd);
     debug("Read addr : %ld\n", read_addr);
-    get_baseline_results(dfd, read_addr, &std_dev, &avg_slope);
+    
+    printf("Creating baseline parameters for read bit detection ...\n");
+    printf("Please wait ...\n");
+    get_baseline_results(dfd, read_addr, &base_std_dev, &base_avg_slope);
+    
+    printf("----------------- BASELINE PARAMETERS ------------------\n");
+    printf("std_dev        :       %ld\n", base_std_dev);
+    printf("avg_slope      :       %ld\n", base_avg_slope);
+    sleep(5);
+
+    while(1)
+    {
+        curr = get_mean_access_time(dfd, read_addr);
+        if(prev == -1)
+        {
+            prev = curr;
+            debug("Exiting from here ...", ""); 
+            continue;
+        }
+
+        slope = curr - prev;
+        normalized = normalized + slope;
+        if(normalized > base_avg_slope)
+            read_bit = 1;
+        else
+            read_bit = 0;
+
+        printf("curr = %ld   slope = %ld   normalized = %ld   Bit detected --------> (%d)\n", 
+                curr, slope, normalized, read_bit);
+    }
+
     return 0;
 }
