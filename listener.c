@@ -14,6 +14,10 @@ do{\
 	fprintf(stderr, "%s(%d): " fmt "\n", __FUNCTION__, __LINE__, __VA_ARGS__);\
 }while(0)
 
+
+#define SAMPLING_TIME 1
+#define SAMPLING_COUNT 10
+
 long
 get_read_addr(int drive_fd)
 {
@@ -47,13 +51,43 @@ get_read_addr(int drive_fd)
     return rand_num;
 }
 
-void
+long
+get_mean_access_time(
+        int     disk_fd,
+        long    read_addr)
+{
+    time_t  start, before, after;
+}
+    void
 get_baseline_results(
         int     fd,
         long    read_addr,
         long    *std_dev,
         long    *avg_slope)
 {
+    int     i=0;
+
+    for(i=0; i<SAMPLING_COUNT; i++)
+    {
+        avg_time = get_mean_access_time(fd, read_addr);
+        std_dev = std_dev + ((double)avg_time/(double)SAMPLING_TIME);
+        
+        if(prev == -1)
+        {
+            prev = avg_time;
+            continue;
+        }
+        if(slope == -1)
+            slope = abs(prev - avg_time);
+        else if(slope < abs(prev - avg_time))
+            slope = abs(prev - avg_time);
+    }
+
+    *std_dev = std_dev;
+    *avg_slope = slope;
+}
+
+        
  
 }
 
