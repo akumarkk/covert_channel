@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 #include <string.h>
+#include <time.h>
 #include <fcntl.h>
 #include <linux/fs.h>
 #include <sys/types.h>
@@ -19,7 +21,7 @@ do{\
 #define SAMPLING_COUNT 10
 
 /* Let the size of the data to be sufficiently large */
-#define SAMPLING_DATA_SIZE     (1024)*(1024)*(256)
+#define READ_DATA_SIZE     (1024)*(1024)*(256)
 
 #define SAMPLE_SIZE_FOR_MEAN   5
 
@@ -64,11 +66,11 @@ get_read_addr(int drive_fd)
  */
 long
 get_time_elapsed(
-        timespec    start,
-        timespec    end)
+        struct timespec    start,
+        struct timespec    end)
 {
     long    tmp = end.tv_nsec - start.tv_nsec;
-
+    struct  timespec diff;
 
     if(tmp < 0)
     {
@@ -95,11 +97,12 @@ get_mean_access_time(
         int     disk_fd,
         long    read_addr)
 {
-    timespec    before, after;
+    struct timespec    before, after;
     time_t      start;
-    long        sum, tmp_avg, avg;
+    long        sum, tmp_avg, avg, diff;
     long        elapsed_time[SAMPLE_SIZE_FOR_MEAN]; // This will have elapsed time in microseconds.
-
+    int         j, ret = -1, i=-1;
+    char        read_buff[READ_DATA_SIZE];
 
     start = time(NULL);
     while(time(NULL) <= (start + SAMPLING_TIME))
@@ -111,12 +114,12 @@ get_mean_access_time(
             return -1;
         }
         
-        before = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &before);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &before);
         read(disk_fd, read_buff, READ_DATA_SIZE);
-        after = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &after);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &after);
         diff = get_time_elapsed(before, after);
         
-        debug("Elapsed time     :   %l", diff);
+        debug("Elapsed time     :   %ld", diff);
         if(i == SAMPLE_SIZE_FOR_MEAN)
         {
             for(j=0; j < SAMPLE_SIZE_FOR_MEAN; j++)
@@ -138,8 +141,8 @@ get_mean_access_time(
 get_baseline_results(
         int     fd,
         long    read_addr,
-        long    *std_dev,
-        long    *avg_slope)
+        long    *par_std_dev,
+        long    *par_avg_slope)
 {
     int     i=0;
     long    prev = -1, avg_time, std_dev;
@@ -161,14 +164,13 @@ get_baseline_results(
             slope = abs(prev - avg_time);
     }
 
-    *std_dev = std_dev;
-    *avg_slope = slope;
+    *par_std_dev = sqrt(std_dev);
+    *par_avg_slope = slope;
+
+    return;
 }
 
         
- 
-}
-
 
 int
 main(int argc, char *argv[])
@@ -178,6 +180,7 @@ main(int argc, char *argv[])
     struct  stat stat_buff;
     int	    ret = 0;
     long    read_addr = 0;
+   long     avg_slope, std_dev;
 
 
     if(argc < 2)
