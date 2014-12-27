@@ -99,15 +99,14 @@ get_mean_access_time(
 {
     struct timespec    before, after;
     time_t      start;
-    long        sum, tmp_avg, avg, diff;
+    long        sum = 0, tmp_avg, avg = 0, diff;
     long        elapsed_time[SAMPLE_SIZE_FOR_MEAN]; // This will have elapsed time in microseconds.
     int         j, ret = -1, i=-1;
     char        read_buff[READ_DATA_SIZE];
     //char        read_buff[1024];
 
-    debug("disk_fd = %d  read_addr = %ld", disk_fd, read_addr);
     start = time(NULL);
-    debug("start time   :   %ld", start);
+    //debug("start time   :   %ld", start);
     while(time(NULL) <= (start + SAMPLING_TIME))
     {
         ret = lseek(disk_fd, read_addr, SEEK_SET);
@@ -122,7 +121,7 @@ get_mean_access_time(
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &after);
         diff = get_time_elapsed(before, after);
         
-        debug("Elapsed time     :   %ld ns", diff);
+        //debug("Elapsed time     :   %ld ns", diff);
         if(i == SAMPLE_SIZE_FOR_MEAN)
         {
             for(j=0; j < SAMPLE_SIZE_FOR_MEAN; j++)
@@ -184,7 +183,6 @@ main(int argc, char *argv[])
 {
     off_t   drive_size;
     int	    dfd = -1;
-    struct  stat stat_buff;
     int	    ret = 0, read_bit;
     long    read_addr = 0, slope, normalized;
     long    base_avg_slope, base_std_dev, curr, prev;
@@ -234,7 +232,9 @@ main(int argc, char *argv[])
         else
             read_bit = 0;
 
-        printf("curr = %ld   slope = %ld   normalized = %ld   Bit detected --------> (%d)\n", 
+        prev = curr;
+
+        printf("curr = %12ld   slope = %12ld   normalized = %12ld   Bit detected --------> (%d)\n", 
                 curr, slope, normalized, read_bit);
     }
 

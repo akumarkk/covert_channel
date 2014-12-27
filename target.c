@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define DEBUG 1
+#define DEBUG 0 
 #define debug(fmt, ...)\
 do{\
     if(DEBUG)\
@@ -19,7 +19,7 @@ do{\
 /* Let the size of the data to be sufficiently large */
 #define READ_DATA_SIZE     (1024)*(1024)
 #define SAMPLING_TIME   1
-#define SLEEP_TIME 1
+#define SLEEP_TIME 2
 
 long
 get_read_addr(int drive_fd)
@@ -40,7 +40,7 @@ get_read_addr(int drive_fd)
 
     while(true)
     {
-        rand_num = rand();
+        rand_num = random();
         if(rand_num < drive_size)
             break;
     }
