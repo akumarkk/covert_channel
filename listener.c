@@ -47,6 +47,15 @@ get_read_addr(int drive_fd)
     return rand_num;
 }
 
+void
+get_baseline_results(
+        int     fd,
+        long    read_addr,
+        long    *std_dev,
+        long    *avg_slope)
+{
+ 
+}
 
 
 int
@@ -73,9 +82,9 @@ main(int argc, char *argv[])
 	    return -1;
     }
 
-
+    /* This is the read address that is used for entire session */
     read_addr  = get_read_addr(dfd);
-    debug("Read addre : %ld\n", read_addr);
-    //get_baseline_results(dfd, read_addr, &std_dev, &avg_slope);
+    debug("Read addr : %ld\n", read_addr);
+    get_baseline_results(dfd, read_addr, &std_dev, &avg_slope);
     return 0;
 }
