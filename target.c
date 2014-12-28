@@ -9,7 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define DEBUG 0 
+#define DEBUG 1 
 #define debug(fmt, ...)\
 do{\
     if(DEBUG)\
@@ -19,7 +19,7 @@ do{\
 /* Let the size of the data to be sufficiently large */
 #define READ_DATA_SIZE     (1024)*(1024)
 #define SAMPLING_TIME   1
-#define SLEEP_TIME 2
+#define SLEEP_TIME 1
 
 long
 get_read_addr(int drive_fd)
@@ -35,7 +35,7 @@ get_read_addr(int drive_fd)
         perror("ioctl  ");
         return -1;
     }
-    debug("Size of disk : %ld", drive_size);
+    //debug("Size of disk : %ld", drive_size);
 
 
     while(true)
@@ -48,7 +48,20 @@ get_read_addr(int drive_fd)
     return rand_num;
 }
 
+void
+synchronize()
+{
+    time_t start = time(NULL);
+    debug("Synchronizing %ld...",start); 
+        
+    while(start % 10 != 5)
+    {   
+        sleep(1);
+        start = time(NULL);
+    }   
 
+    debug("covert communication started %ld...", start);
+}
 
 
 int
@@ -82,7 +95,8 @@ send_bit(int disk_fd, char bit)
 int
 send_data(int disk_fd)
 {
-    char    *data = "1010101110101010111010101010100011100001111";
+    //char    *data = "1010101110101010111010101010100011100001111";
+    char    *data = "00010001001000100100";
     int     len, i;
 
     len = strlen(data);
@@ -114,8 +128,11 @@ main(int argc, char *argv[])
         perror("open");
         return -1;
     }
+    printf("Waiting ...\n");
+    sleep(15);
 
     printf("----------------- Sending data over covert channel --------------------\n");
+    synchronize();    
     send_data(dfd);
 
     return 0;

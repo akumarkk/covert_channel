@@ -61,6 +61,22 @@ get_read_addr(int drive_fd)
     return rand_num;
 }
 
+
+void
+synchronize()
+{
+    time_t start = time(NULL);
+    debug("Synchronizing %ld...",start); 
+    
+    while(start % 10 != 5)
+    {
+        sleep(1);
+        start = time(NULL);
+    }
+
+    debug("covert communication started %ld...", start);
+}
+
 /*
  *  get_time_elapsed() : Get the elapsed time in nano seconds
  */
@@ -213,8 +229,8 @@ main(int argc, char *argv[])
     printf("----------------- BASELINE PARAMETERS ------------------\n");
     printf("std_dev        :       %ld\n", base_std_dev);
     printf("avg_slope      :       %ld\n", base_avg_slope);
-    sleep(5);
 
+    synchronize();
     while(1)
     {
         curr = get_mean_access_time(dfd, read_addr);
