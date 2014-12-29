@@ -17,7 +17,7 @@ do{\
 }while(0)
 
 /* Let the size of the data to be sufficiently large */
-#define READ_DATA_SIZE     (1024)*(1024)
+#define READ_DATA_SIZE     (1024)*(1024)*(512)
 #define SAMPLING_TIME   1
 #define SLEEP_TIME 1
 
@@ -35,7 +35,7 @@ get_read_addr(int drive_fd)
         perror("ioctl  ");
         return -1;
     }
-    //debug("Size of disk : %ld", drive_size);
+    debug("Size of disk : %ld", drive_size);
 
 
     while(true)
@@ -45,6 +45,7 @@ get_read_addr(int drive_fd)
             break;
     }
 
+    debug("rand_num = %ld", rand_num);
     return rand_num;
 }
 
@@ -64,12 +65,13 @@ synchronize()
 }
 
 
+char    read_buff[READ_DATA_SIZE];
 int
 send_bit(int disk_fd, char bit)
 {
     long    read_addr;
     time_t  start;
-    char    read_buff[READ_DATA_SIZE];
+    //char    read_buff[READ_DATA_SIZE];
 
     printf("Sending bit -------> (%c)\n", bit);
 
@@ -79,10 +81,11 @@ send_bit(int disk_fd, char bit)
     }
     else
     {
-        read_addr = get_read_addr(disk_fd);
+        //read_addr = get_read_addr(disk_fd);
         start = time(NULL);
         while(time(NULL) <= (start + SAMPLING_TIME))
         {
+            read_addr = get_read_addr(disk_fd);
             lseek(disk_fd, read_addr, SEEK_SET);
             read(disk_fd, read_buff, READ_DATA_SIZE);
         }
@@ -129,7 +132,7 @@ main(int argc, char *argv[])
         return -1;
     }
     printf("Waiting ...\n");
-    sleep(15);
+    //sleep(15);
 
     printf("----------------- Sending data over covert channel --------------------\n");
     synchronize();    
