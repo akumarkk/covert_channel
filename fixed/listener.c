@@ -202,11 +202,10 @@ get_baseline_results(
 int
 main(int argc, char *argv[])
 {
-    off_t   drive_size;
     int	    dfd = -1;
     int	    ret = 0, read_bit;
     long    read_addr = 0, slope, normalized = 0;
-    long    base_avg_slope, base_std_dev, curr, prev;
+    long    base_avg_slope, base_std_dev, curr, prev= -1;
 
 
     if(argc < 2)
