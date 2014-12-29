@@ -201,7 +201,7 @@ main(int argc, char *argv[])
     int	    dfd = -1;
     int	    ret = 0, read_bit;
     long    read_addr = 0, slope, normalized;
-    long    base_avg_slope, base_std_dev, curr, prev;
+    long    base_avg_slope, base_std_dev, curr, prev = -1;
 
 
     if(argc < 2)
