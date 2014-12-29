@@ -21,7 +21,7 @@ do{\
 #define SAMPLING_COUNT 10
 
 /* Let the size of the data to be sufficiently large */
-#define READ_DATA_SIZE     (1024)*(1024)
+#define READ_DATA_SIZE     (1024)*(1024)*(10)
 
 #define SAMPLE_SIZE_FOR_MEAN   5
 
