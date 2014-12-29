@@ -22,7 +22,7 @@ do{\
 #define SAMPLING_COUNT 10
 
 /* Let the size of the data to be sufficiently large */
-#define READ_DATA_SIZE     (1024)*(1024)*(10)
+#define READ_DATA_SIZE     (1024)*(1024)*(512)
 
 #define SAMPLE_SIZE_FOR_MEAN   5
 
@@ -50,6 +50,7 @@ get_read_addr(int drive_fd)
         return -1; 
     }   
     debug("Size of disk : %ld", drive_size);
+    rand_num = rand();
     if(drive_size < READ_DATA_SIZE)
     {
         printf("drive size(%ld) is too less to read !!!\n", drive_size);
