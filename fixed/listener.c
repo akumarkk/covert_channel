@@ -49,7 +49,11 @@ get_read_addr(int drive_fd)
         return -1; 
     }   
     debug("Size of disk : %ld", drive_size);
-
+    if(drive_size < READ_DATA_SIZE)
+    {
+        printf("drive size(%ld) is too less to read !!!\n", drive_size);
+        exit(0);
+    }
 
     while(true)
     {
