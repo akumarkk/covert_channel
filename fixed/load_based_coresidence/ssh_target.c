@@ -44,6 +44,7 @@ cleanup_child_proc()
         }
         sleep(1);// Allow one sec to finish for next child proc
     }
+    child_count = 0;
 }
 
 
