@@ -89,11 +89,11 @@ scp(char *ip)
     argv[2] = temp_file;
     argv[3] = NULL;
 
-    printf("/usr/bin/scp %s %s \n", tmp, temp_file);
+    //debug("/usr/bin/scp %s %s \n", tmp, temp_file);
     pid = fork();
     if(pid == 0)
     {
-        printf("scp process : (%d)  file : %s\n\n", getpid(), temp_file);
+        debug("scp process : (%d)  file : %s\n\n", getpid(), temp_file);
         execv(argv[0], argv);
 
         perror("execv");
@@ -206,6 +206,7 @@ main(int argc, char *argv[])
 
     printf("----------------- Sending data over covert channel --------------------\n");
     send_data(argv[1]);
+    cleanup_child_proc();
 
     return 0;
 }
